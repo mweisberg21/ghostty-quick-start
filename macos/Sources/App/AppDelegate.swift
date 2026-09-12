@@ -150,6 +150,7 @@ class AppDelegate: NSObject,
 
     /// Manages updates
     let updateController = UpdateController()
+    @MainActor private lazy var settingsController = SettingsController(appDelegate: self)
     var updateViewModel: UpdateViewModel {
         updateController.viewModel
     }
@@ -949,6 +950,8 @@ class AppDelegate: NSObject,
     }
 
     // MARK: - IB Actions
+
+    @MainActor func showSettings() { settingsController.show() }
 
     @IBAction func openConfig(_ sender: Any?) {
         ghostty.openConfig()

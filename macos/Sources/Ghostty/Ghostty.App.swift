@@ -128,6 +128,10 @@ extension Ghostty {
         }
 
         func openConfig() {
+            DispatchQueue.main.async { (NSApp.delegate as? AppDelegate)?.showSettings() }
+        }
+
+        func openConfigFile() {
             let str = configPath ?? Ghostty.AllocatedString(ghostty_config_open_path()).string
             guard !str.isEmpty else { return }
             let fileURL = URL(fileURLWithPath: str).absoluteString

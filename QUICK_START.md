@@ -27,11 +27,23 @@ Drag the sidebar's right edge to change its width. Double-click the edge to rest
 
 Click the sidebar button beside **Quick Start** to collapse the sidebar to icons. Click it again to expand it. Hover over an icon to see the tab name and folder. The **View** menu also has **Collapse Sidebar** and **Expand Sidebar**.
 
-The top tab bar is hidden by default. Select **View → Show Top Tab Bar** to show it. This setting is saved between launches. Existing tab keyboard shortcuts still work.
+The top tab bar is visible by default. A saved choice from an earlier version is kept. Select **View → Show Top Tab Bar**, or use **Settings → Tabs & Sidebar**, to change it. This setting is saved between launches. Existing tab keyboard shortcuts still work.
 
 The **+** button in **Open Tabs** creates a tab. Hover over a tab row to show its close button. Right-click a tab for **Close Tab**, **Close Other Tabs**, **Close Tabs Below**, **Move Tab to New Window**, **Show All Tabs**, **Rename Tab…**, and **Tab Color**. The sidebar uses the same tab color as the top bar. Normal warnings for running processes still apply.
 
 Each window's sidebar lists that window's tabs in their native order. Folder pins can still return to a matching session in another window.
+
+## Settings
+
+Open **Ghostty → Settings…** or press **⌘,**. Settings opens in its own window and keeps your terminal tabs in place.
+
+- **Tabs & Sidebar:** show the top tab bar, collapse the sidebar, change its width, or reset the layout.
+- **Appearance:** search bundled themes, choose an installed font, change text size and opacity, or set horizontal and vertical padding. The sample shows the current terminal colors. Changes apply when selected. Opacity can require a new window; a tab with manual zoom can keep its text size.
+- **Projects:** add and remove pins or configure the launch action for each folder. These are the same pins and actions shown in the sidebar. Changes apply to new tabs.
+- **Updates:** control automatic checks and downloads, check now, and see update status and the last check time. Local source builds show these controls as unavailable. Signed releases use this fork's existing update feed.
+- **Advanced:** open the normal Ghostty config file, reload configuration, locate the Settings file, and read configuration errors.
+
+Appearance and update choices are saved in `~/Library/Application Support/com.markweisberg.ghostty.quickstart/settings.ghostty`. The app loads these choices after the normal configuration. It validates changes before saving and does not rewrite the shared Ghostty config. **Use Config File** removes a Settings choice so the file value takes effect again. **Use Config File for All Appearance Settings** removes only the appearance choices; update preferences and project pins stay intact.
 
 ## Build and run
 

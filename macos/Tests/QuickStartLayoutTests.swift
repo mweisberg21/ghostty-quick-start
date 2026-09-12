@@ -9,14 +9,14 @@ struct QuickStartLayoutTests {
         let defaults = try #require(UserDefaults(suiteName: name))
         defer { defaults.removePersistentDomain(forName: name) }
         let layout = QuickStartLayout(defaults: defaults)
-        #expect(!layout.showsTopTabBar)
+        #expect(layout.showsTopTabBar)
         layout.width = 318
         layout.isCollapsed = true
-        layout.showsTopTabBar = true
+        layout.showsTopTabBar = false
         let restored = QuickStartLayout(defaults: defaults)
         #expect(restored.width == 318)
         #expect(restored.isCollapsed)
-        #expect(restored.showsTopTabBar)
+        #expect(!restored.showsTopTabBar)
         #expect(restored.visibleWidth(available: 1000) == 52)
         restored.isCollapsed = false
         #expect(restored.visibleWidth(available: 1000) == 318)

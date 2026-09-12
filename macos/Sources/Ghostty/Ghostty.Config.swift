@@ -38,7 +38,7 @@ extension Ghostty {
         }
 
         convenience init(at path: String? = nil, finalize: Bool = true) {
-            self.init(config: Self.loadConfig(at: path, finalize: finalize))
+            self.init(config: Self.loadConfig(at: path, finalize: finalize, settingsURL: path == nil ? SettingsFile.url : nil))
         }
 
         convenience init(clone config: ghostty_config_t) {
@@ -57,7 +57,7 @@ extension Ghostty {
         /// - Parameters:
         ///   - path: An optional preferred config file path. Pass `nil` to load the default configuration files.
         ///   - finalize: Whether to finalize the configuration to populate default values.
-        static func loadConfig(at path: String?, finalize: Bool) -> ghostty_config_t? {
+        static func loadConfig(at path: String?, finalize: Bool, settingsURL: URL? = nil) -> ghostty_config_t? {
             // Initialize the global configuration.
             guard let cfg = ghostty_config_new() else {
                 logger.critical("ghostty_config_new failed")
@@ -79,9 +79,10 @@ extension Ghostty {
 
             ghostty_config_load_recursive_files(cfg)
 
-            // TODO: we'd probably do some config loading here... for now we'd
-            // have to do this synchronously. When we support config updating we can do
-            // this async and update later.
+            // Fork-only choices are loaded last, without rewriting shared config files.
+            if let settingsURL, FileManager.default.fileExists(atPath: settingsURL.path) {
+                ghostty_config_load_file(cfg, settingsURL.path)
+            }
 
             if finalize {
                 // Finalize will make our defaults available.

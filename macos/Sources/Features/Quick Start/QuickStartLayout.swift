@@ -24,7 +24,7 @@ final class QuickStartLayout: ObservableObject {
         self.defaults = defaults
         width = Self.clamp(defaults.object(forKey: "quickStart.sidebarWidth") as? Double ?? Self.defaultWidth)
         isCollapsed = defaults.bool(forKey: "quickStart.sidebarCollapsed")
-        showsTopTabBar = defaults.bool(forKey: "quickStart.showsTopTabBar")
+        showsTopTabBar = defaults.object(forKey: "quickStart.showsTopTabBar") as? Bool ?? true
     }
 
     static func clamp(_ width: Double) -> Double {
