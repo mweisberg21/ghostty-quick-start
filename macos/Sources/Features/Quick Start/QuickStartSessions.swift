@@ -12,6 +12,9 @@ final class QuickStartSessions: ObservableObject {
         let folder: URL?
         let isSelected: Bool
         let program: QuickStartProgram
+        let color: TerminalTabColor
+        let groupID: ObjectIdentifier?
+        let tabIndex: Int
 
         var displayTitle: String {
             guard program != .terminal, !title.localizedCaseInsensitiveContains(program.title) else { return title }
@@ -67,9 +70,12 @@ final class QuickStartSessions: ObservableObject {
                 id: id,
                 title: window.title.isEmpty ? "Terminal" : window.title,
                 folder: controller.quickStartFolder ?? window.representedURL,
-                isSelected: window.isKeyWindow,
+                isSelected: window.tabGroup?.selectedWindow === window || window.isKeyWindow,
                 program: QuickStartProgram.foreground(
-                    pid: (controller.focusedSurface ?? controller.surfaceTree.first)?.surfaceModel?.foregroundPID))
+                    pid: (controller.focusedSurface ?? controller.surfaceTree.first)?.surfaceModel?.foregroundPID),
+                color: (window as? TerminalWindow)?.tabColor ?? .none,
+                groupID: window.tabGroup.map(ObjectIdentifier.init),
+                tabIndex: window.tabGroup?.windows.firstIndex(of: window) ?? 0)
         }
         if sessions != updated { sessions = updated }
     }
@@ -77,6 +83,26 @@ final class QuickStartSessions: ObservableObject {
     func sessions(for folder: URL) -> [Session] {
         let path = folder.standardizedFileURL.resolvingSymlinksInPath().path
         return sessions.filter { $0.folder?.standardizedFileURL.resolvingSymlinksInPath().path == path }
+    }
+
+    func controller(for session: Session) -> TerminalController? {
+        observations[session.id]?.controller
+    }
+
+    /// Match the native tab order and keep window-scoped actions unambiguous.
+    func sessions(in controller: TerminalController) -> [Session] {
+        guard let window = controller.window else { return [] }
+        return (window.tabGroup?.windows ?? [window]).compactMap { window in
+            guard let controller = window.windowController as? TerminalController else { return nil }
+            return sessions.first { $0.id == ObjectIdentifier(controller) }
+        }
+    }
+
+    func close(_ session: Session) {
+        guard let controller = controller(for: session) else { return }
+        // Bring any process confirmation sheet to the front.
+        focus(session)
+        controller.closeTab(nil)
     }
 
     func focus(_ session: Session) {

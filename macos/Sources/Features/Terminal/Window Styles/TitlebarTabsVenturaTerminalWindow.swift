@@ -354,7 +354,22 @@ class TitlebarTabsVenturaTerminalWindow: TerminalWindow {
         }
     }
 
+    override func applyQuickStartTabBarVisibility() {
+        let accessory = titlebarAccessoryViewControllers.first(where: { isTabBar($0) })
+        let wasHidden = accessory?.view.isHidden ?? false
+        super.applyQuickStartTabBarVisibility()
+        if hidesQuickStartTopTabBar {
+            resetCustomTabBarViews()
+        } else if wasHidden, let accessory {
+            pushTabsToTitlebar(accessory)
+        }
+    }
+
     private func pushTabsToTitlebar(_ tabBarController: NSTitlebarAccessoryViewController) {
+        guard !hidesQuickStartTopTabBar else {
+            resetCustomTabBarViews()
+            return
+        }
         // We need a toolbar as a target for our titlebar tabs.
         if toolbar == nil {
             generateToolbar()
@@ -369,6 +384,7 @@ class TitlebarTabsVenturaTerminalWindow: TerminalWindow {
         // If we don't do this then on launch windows with restored state with tabs will end
         // up with messed up tab bars that don't show all tabs.
         DispatchQueue.main.async { [weak self] in
+            guard self?.hidesQuickStartTopTabBar == false else { return }
             let accessoryView = tabBarController.view
             guard let accessoryClipView = accessoryView.superview else { return }
             guard let titlebarView = accessoryClipView.superview else { return }

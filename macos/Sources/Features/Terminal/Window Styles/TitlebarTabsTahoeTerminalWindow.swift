@@ -149,7 +149,17 @@ class TitlebarTabsTahoeTerminalWindow: TransparentTitlebarTerminalWindow, NSTool
     /// this function which is idempotent to call.
     ///
     /// There are more scenarios to look out for and they're documented within the method.
+    override func applyQuickStartTabBarVisibility() {
+        super.applyQuickStartTabBarVisibility()
+        if hidesQuickStartTopTabBar { removeTabBar() } else { setupTabBar() }
+    }
+
     func setupTabBar() {
+        guard !hidesQuickStartTopTabBar else {
+            super.applyQuickStartTabBarVisibility()
+            removeTabBar()
+            return
+        }
         // We only want to setup the observer once
         guard tabBarObserver == nil else { return }
 

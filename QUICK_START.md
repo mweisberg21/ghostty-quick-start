@@ -4,7 +4,7 @@ This local Ghostty fork adds a macOS sidebar for pinned project folders.
 
 ## Use
 
-1. Click **Pin a Folder…** or **+** in the sidebar.
+1. Click **Pin a Folder…** or the folder-plus button in the sidebar.
 2. Select one or more folders.
 3. Click a folder to open a shell in that folder. If a tab for that folder is already open, the click returns to that tab.
 4. Use **Open Tabs** to switch between running tabs. The selected tab has a colored marker. Folder rows show the number of open tabs.
@@ -20,6 +20,18 @@ The CLI choices run `claude`, `codex`, or `agent` (Cursor CLI) through the norma
 Open tabs show the native Claude, Cursor, or Codex app icon for the foreground program. Icons update once per second, including when a command starts from the shell. The blue row highlight and dot mark the selected tab. If a matching desktop app is not installed, the row uses a terminal icon.
 
 Selecting an existing tab brings back its current process and terminal content. Changing a folder action does not change a running session. To use the new action, select **Open New Tab**. Closed CLI sessions are not resumed automatically.
+
+## Sidebar and tabs
+
+Drag the sidebar's right edge to change its width. Double-click the edge to restore the default width. The app saves your chosen width. A narrow window limits the sidebar width to keep room for the terminal.
+
+Click the sidebar button beside **Quick Start** to collapse the sidebar to icons. Click it again to expand it. Hover over an icon to see the tab name and folder. The **View** menu also has **Collapse Sidebar** and **Expand Sidebar**.
+
+The top tab bar is hidden by default. Select **View → Show Top Tab Bar** to show it. This setting is saved between launches. Existing tab keyboard shortcuts still work.
+
+The **+** button in **Open Tabs** creates a tab. Hover over a tab row to show its close button. Right-click a tab for **Close Tab**, **Close Other Tabs**, **Close Tabs Below**, **Move Tab to New Window**, **Show All Tabs**, **Rename Tab…**, and **Tab Color**. The sidebar uses the same tab color as the top bar. Normal warnings for running processes still apply.
+
+Each window's sidebar lists that window's tabs in their native order. Folder pins can still return to a matching session in another window.
 
 ## Build and run
 

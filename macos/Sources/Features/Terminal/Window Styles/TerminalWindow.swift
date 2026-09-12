@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 import GhosttyKit
 
@@ -17,6 +18,7 @@ class TerminalWindow: NSWindow {
 
     /// The view model for SwiftUI views
     private var viewModel = ViewModel()
+    private var quickStartTabBarSubscription: AnyCancellable?
 
     /// Reset split zoom button in titlebar
     private let resetZoomAccessory = NSTitlebarAccessoryViewController()
@@ -65,6 +67,7 @@ class TerminalWindow: NSWindow {
             guard tabColor != oldValue else { return }
             tabColorIndicator.rootView = TabColorIndicatorView(tabColor: tabColor)
             invalidateRestorableState()
+            QuickStartSessions.shared.refresh()
         }
     }
 
@@ -92,7 +95,19 @@ class TerminalWindow: NSWindow {
         ) { [weak self] n in
             guard let self, let menu = n.object as? NSMenu else { return }
             self.configureTabContextMenuIfNeeded(menu)
+            // AppKit inserts its own tab-bar command. This fork has a persistent
+            // replacement that also works for groups with more than one tab.
+            if menu.items.contains(where: { $0.action == #selector(TerminalController.toggleQuickStartTopTabBar(_:)) }) {
+                for item in menu.items where item.action == #selector(NSWindow.toggleTabBar(_:)) {
+                    item.isHidden = true
+                }
+            }
         }
+
+        quickStartTabBarSubscription = QuickStartLayout.shared.$showsTopTabBar
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applyQuickStartTabBarVisibility() }
 
         // This is required so that window restoration properly creates our tabs
         // again. I'm not sure why this is required. If you don't do this, then
@@ -219,6 +234,7 @@ class TerminalWindow: NSWindow {
             tabBarDidDisappear()
         }
         viewModel.isMainWindow = true
+        applyQuickStartTabBarVisibility()
     }
 
     override func resignMain() {
@@ -228,7 +244,8 @@ class TerminalWindow: NSWindow {
 
     @discardableResult
     func beginInlineTabTitleEdit(for targetWindow: NSWindow) -> Bool {
-        tabTitleEditor.beginEditing(for: targetWindow)
+        guard !hidesQuickStartTopTabBar else { return false }
+        return tabTitleEditor.beginEditing(for: targetWindow)
     }
 
     @objc private func renameTabFromContextMenu(_ sender: NSMenuItem) {
@@ -260,6 +277,8 @@ class TerminalWindow: NSWindow {
         if isTabBar(childViewController) {
             childViewController.identifier = Self.tabBarIdentifier
             tabBarDidAppear()
+            childViewController.isHidden = hidesQuickStartTopTabBar
+            DispatchQueue.main.async { [weak self] in self?.applyQuickStartTabBarVisibility() }
         }
     }
 
@@ -269,6 +288,32 @@ class TerminalWindow: NSWindow {
         }
 
         super.removeTitlebarAccessoryViewController(at: index)
+    }
+
+    /// Hide only the native accessory, preserving the tab group and keyboard actions.
+    var hidesQuickStartTopTabBar: Bool {
+        terminalController != nil && !QuickStartLayout.shared.showsTopTabBar
+    }
+
+    func applyQuickStartTabBarVisibility() {
+        for accessory in titlebarAccessoryViewControllers where isTabBar(accessory) {
+            accessory.isHidden = hidesQuickStartTopTabBar
+            accessory.view.isHidden = hidesQuickStartTopTabBar
+            accessory.view.setAccessibilityHidden(hidesQuickStartTopTabBar)
+        }
+        // The titlebar-tab styles reposition the native view with constraints.
+        // Hide that view too, because those constraints can keep it on screen
+        // even when AppKit hides the accessory controller.
+        tabBarView?.isHidden = hidesQuickStartTopTabBar
+        tabBarView?.setAccessibilityHidden(hidesQuickStartTopTabBar)
+    }
+
+    override func toggleTabBar(_ sender: Any?) {
+        guard terminalController != nil else {
+            super.toggleTabBar(sender)
+            return
+        }
+        QuickStartLayout.shared.showsTopTabBar.toggle()
     }
 
     // MARK: Tab Bar

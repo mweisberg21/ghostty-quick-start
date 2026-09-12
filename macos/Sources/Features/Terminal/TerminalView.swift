@@ -42,6 +42,7 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
     @ObservedObject var ghostty: Ghostty.App
 
     var showsQuickStart: Bool = false
+    @ObservedObject private var quickStartLayout = QuickStartLayout.shared
 
     // The required view model
     @ObservedObject var viewModel: ViewModel
@@ -73,12 +74,20 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
         case .error:
             ErrorView()
         case .ready:
-            HStack(spacing: 0) {
-                if showsQuickStart {
-                    QuickStartSidebar(ghostty: ghostty)
-                    Divider()
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    if showsQuickStart, let controller = viewModel as? TerminalController {
+                        let width = quickStartLayout.visibleWidth(available: geometry.size.width)
+                        QuickStartSidebar(ghostty: ghostty, controller: controller)
+                            .frame(width: width)
+                        if quickStartLayout.isCollapsed {
+                            Divider()
+                        } else {
+                            QuickStartResizeHandle(visibleWidth: width)
+                        }
+                    }
+                    terminalContent
                 }
-                terminalContent
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

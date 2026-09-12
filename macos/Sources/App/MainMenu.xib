@@ -315,6 +315,19 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="View" id="m6z-2H-VW7">
                         <items>
+                            <menuItem title="Collapse Sidebar" id="qss-toggle-item">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleQuickStartSidebar:" target="-1" id="qss-toggle-action"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Show Top Tab Bar" id="qst-toggle-item">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="toggleQuickStartTopTabBar:" target="-1" id="qst-toggle-action"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="qs-menu-separator"/>
                             <menuItem title="Reset Font Size" id="Jah-MY-aLX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

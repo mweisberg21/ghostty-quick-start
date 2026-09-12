@@ -3,6 +3,8 @@ import SwiftUI
 
 struct QuickStartSidebar: View {
     @ObservedObject var ghostty: Ghostty.App
+    let controller: TerminalController
+    @ObservedObject private var layout = QuickStartLayout.shared
     @ObservedObject private var store = PinnedFolderStore.shared
     @ObservedObject private var sessions = QuickStartSessions.shared
     @State private var errorMessage: String?
@@ -10,55 +12,15 @@ struct QuickStartSidebar: View {
     @State private var editingFolder: URL?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Quick Start").font(.headline)
-                    Text("Your folders and open tabs")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button(action: addFolders) { Image(systemName: "plus") }
-                    .buttonStyle(.borderless)
-                    .help("Pin a folder")
-                    .accessibilityLabel("Pin a folder")
-            }
-            .padding(16)
+        VStack(spacing: 0) {
+            header
             Divider()
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 4) {
-                    sectionTitle("PINNED FOLDERS")
-                    if store.folders.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Pin a folder to open it in a terminal.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button("Pin a Folder…", action: addFolders)
-                        }
-                        .padding(8)
-                    }
-                    ForEach(store.folders, id: \.self) { folder in
-                        folderRow(folder)
-                    }
-                    if !sessions.sessions.isEmpty {
-                        Divider().padding(.vertical, 8)
-                        sectionTitle("OPEN TABS · \(sessions.sessions.count)")
-                        ForEach(sessions.sessions) { session in
-                            sessionRow(session)
-                        }
-                    }
-                }
-                .padding(8)
+            if layout.isCollapsed {
+                collapsedContent
+            } else {
+                expandedContent
             }
-            Divider()
-            Text("Select an open tab to return to it.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(14)
         }
-        .frame(width: 224)
         .frame(maxHeight: .infinity)
         .background(.regularMaterial)
         .sheet(isPresented: Binding(
@@ -79,6 +41,99 @@ struct QuickStartSidebar: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    private var windowSessions: [QuickStartSessions.Session] {
+        sessions.sessions(in: controller)
+    }
+
+    private var header: some View {
+        HStack(spacing: 6) {
+            if !layout.isCollapsed {
+                Text("Quick Start").font(.headline)
+                Spacer(minLength: 0)
+                Button(action: addFolders) { Image(systemName: "folder.badge.plus") }
+                    .buttonStyle(.borderless)
+                    .help("Pin a folder")
+                    .accessibilityLabel("Pin a folder")
+            }
+            Button { layout.isCollapsed.toggle() } label: {
+                Image(systemName: "sidebar.left")
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.borderless)
+            .help(layout.isCollapsed ? "Expand sidebar" : "Collapse sidebar")
+            .accessibilityLabel(layout.isCollapsed ? "Expand sidebar" : "Collapse sidebar")
+        }
+        .padding(.horizontal, layout.isCollapsed ? 6 : 12)
+        .padding(.vertical, 10)
+    }
+
+    private var expandedContent: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 4) {
+                sectionTitle("PINNED FOLDERS")
+                if store.folders.isEmpty {
+                    Button("Pin a Folder…", action: addFolders).padding(8)
+                }
+                ForEach(store.folders, id: \.self) { folder in
+                    folderRow(folder)
+                }
+                Divider().padding(.vertical, 8)
+                HStack {
+                    sectionTitle("OPEN TABS · \(windowSessions.count)")
+                    Spacer()
+                    newTabButton
+                }
+                ForEach(windowSessions) { session in
+                    QuickStartSessionRow(session: session, isCollapsed: false)
+                }
+            }
+            .padding(8)
+        }
+    }
+
+    private var collapsedContent: some View {
+        ScrollView {
+            VStack(spacing: 6) {
+                ForEach(store.folders, id: \.self) { folder in
+                    Button {
+                        if let existing = sessions.sessions(for: folder).last {
+                            sessions.focus(existing)
+                        } else {
+                            openNewTab(folder)
+                        }
+                    } label: {
+                        Image(systemName: "folder")
+                            .frame(width: 36, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .help(folder.path)
+                    .accessibilityLabel("Open \(folder.lastPathComponent)")
+                    .contextMenu {
+                        Button("Open New Tab") { openNewTab(folder) }
+                        Button("Configure…") { editingFolder = folder }
+                        Button("Remove Pin", role: .destructive) { store.remove(folder) }
+                    }
+                }
+                Divider().padding(.vertical, 4)
+                ForEach(windowSessions) { session in
+                    QuickStartSessionRow(session: session, isCollapsed: true)
+                }
+                newTabButton
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private var newTabButton: some View {
+        Button { controller.newTab(nil) } label: {
+            Image(systemName: "plus").frame(width: 28, height: 28)
+        }
+        .buttonStyle(.borderless)
+        .help("New tab (⌘T)")
+        .accessibilityLabel("New tab")
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -155,43 +210,10 @@ struct QuickStartSidebar: View {
         }
     }
 
-    private func sessionRow(_ session: QuickStartSessions.Session) -> some View {
-        Button { sessions.focus(session) } label: {
-            HStack(spacing: 9) {
-                QuickStartProgramIcon(program: session.program)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(session.displayTitle)
-                        .font(.system(size: 12, weight: session.isSelected ? .semibold : .regular))
-                        .lineLimit(1)
-                    if let folder = session.folder {
-                        Text(folder.path)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                }
-                Spacer(minLength: 0)
-                if session.isSelected {
-                    Circle().fill(Color.accentColor).frame(width: 5, height: 5)
-                        .accessibilityHidden(true)
-                }
-            }
-            .padding(10)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(RoundedRectangle(cornerRadius: 7)
-            .fill(session.isSelected ? Color.accentColor.opacity(0.12) : .clear))
-        .accessibilityLabel("Switch to \(session.displayTitle)")
-        .accessibilityValue(session.isSelected ? "Selected" : "")
-        .help(session.folder?.path ?? session.title)
-    }
-
     private func openNewTab(_ folder: URL) {
         do {
             try QuickStartLauncher.launch(
-                folder, options: store.options(for: folder), ghostty: ghostty, parent: NSApp.keyWindow)
+                folder, options: store.options(for: folder), ghostty: ghostty, parent: controller.window)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -205,7 +227,7 @@ struct QuickStartSidebar: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = true
         panel.canCreateDirectories = false
-        guard let window = NSApp.keyWindow else { return }
+        guard let window = controller.window else { return }
         panel.beginSheetModal(for: window) { response in
             guard response == .OK else { return }
             do {

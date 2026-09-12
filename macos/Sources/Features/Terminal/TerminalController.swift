@@ -1119,7 +1119,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         // without waiting for @FocusedValue to propagate through the
         // SwiftUI focus chain.
         if let size = focusedSurface?.initialSize {
-            container.initialContentSize = NSSize(width: size.width + 225, height: size.height)
+            container.initialContentSize = NSSize(width: size.width + (QuickStartLayout.shared.isCollapsed ? QuickStartLayout.collapsedWidth + 1 : QuickStartLayout.clamp(QuickStartLayout.shared.width) + 6), height: size.height)
         }
 
         window.contentView = container
@@ -1306,6 +1306,14 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     }
 
     // MARK: First Responder
+
+    @IBAction func toggleQuickStartSidebar(_ sender: Any?) {
+        QuickStartLayout.shared.isCollapsed.toggle()
+    }
+
+    @IBAction func toggleQuickStartTopTabBar(_ sender: Any?) {
+        QuickStartLayout.shared.showsTopTabBar.toggle()
+    }
 
     @IBAction func newWindow(_ sender: Any?) {
         guard let surface = focusedSurface?.surface else { return }
@@ -1706,6 +1714,14 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 extension TerminalController {
     override func validateMenuItem(_ item: NSMenuItem) -> Bool {
         switch item.action {
+        case #selector(toggleQuickStartSidebar):
+            item.title = QuickStartLayout.shared.isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"
+            return true
+
+        case #selector(toggleQuickStartTopTabBar):
+            item.state = QuickStartLayout.shared.showsTopTabBar ? .on : .off
+            return true
+
         case #selector(closeTabsOnTheRight):
             guard let window, let tabGroup = window.tabGroup else { return false }
             guard let currentIndex = tabGroup.windows.firstIndex(of: window) else { return false }
