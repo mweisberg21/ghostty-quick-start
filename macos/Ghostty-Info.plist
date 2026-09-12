@@ -111,7 +111,7 @@
 	<key>SUPublicEDKey</key>
 	<string>16bn7a+GmMg82Wl0fzu83KcGaRq7FWXsY4UrwQIgjF4=</string>
 	<key>SUFeedURL</key>
-	<string>https://github.com/mweisberg21/ghostty-quick-start/releases/latest/download/appcast.xml</string>
+	<string>https:&#47;&#47;github.com/mweisberg21/ghostty-quick-start/releases/latest/download/appcast.xml</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

@@ -97,7 +97,12 @@ def notarize(args, directory, app, archive):
     if submission_path.exists():
         submission = json.loads(submission_path.read_text())
     else:
-        submission = json.loads(run('asc', 'notarization', 'submit', '--file', archive, capture=True))
+        response = json.loads(run('asc', 'notarization', 'submit', '--file', archive, capture=True))
+        data = response.get('data', response)
+        submission = {'id': data.get('id', response.get('id')),
+                      'status': data.get('attributes', data).get('status', 'Submitted')}
+        if not submission['id']:
+            raise RuntimeError('Apple returned no submission ID. Check asc notarization list before retrying.')
         submission_path.write_text(json.dumps(submission, indent=2) + '\n')
     print(json.dumps(submission))
     print('Use asc notarization status --id <submission ID> to check Apple approval, then run finalize.')
