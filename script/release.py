@@ -82,7 +82,9 @@ def prepare(args, directory, app, archive):
     run('codesign', '--force', '--timestamp', '--options', 'runtime', '--sign', identity,
         '--entitlements', ROOT / 'macos/Ghostty.entitlements', app)
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', app)
-    run('lipo', app / 'Contents/MacOS/ghostty', '-verify_arch', 'arm64', 'x86_64')
+    architectures = run('lipo', '-archs', app / 'Contents/MacOS/ghostty', capture=True).split()
+    if not {'arm64', 'x86_64'}.issubset(architectures):
+        raise RuntimeError(f'The release must include Apple silicon and Intel code: {architectures}')
     run('ditto', '-c', '-k', '--keepParent', '--sequesterRsrc', app, archive)
     manifest = dict(version=args.version, build=args.build, sourceCommit=run('git', 'rev-parse', 'HEAD', capture=True),
                     upstream=json.loads((ROOT / 'release/upstream.json').read_text()), notarized=False)
