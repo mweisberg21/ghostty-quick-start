@@ -40,6 +40,8 @@ class UpdateController {
     /// This must be called before the updater can check for updates. If starting fails,
     /// the error will be shown to the user.
     func startUpdater() {
+        // This fork is updated from source, not from the upstream app feed.
+        guard Bundle.main.infoDictionary?["QuickStartSourceBuild"] as? Bool != true else { return }
         do {
             try updater.start()
         } catch {
@@ -60,6 +62,13 @@ class UpdateController {
     ///
     /// This is typically connected to a menu item action.
     func checkForUpdates() {
+        if Bundle.main.infoDictionary?["QuickStartSourceBuild"] as? Bool == true {
+            let alert = NSAlert()
+            alert.messageText = "Ghostty Quick Start"
+            alert.informativeText = "Update this app from its source project."
+            alert.runModal()
+            return
+        }
         // If we're already idle, then just check for updates immediately.
         if viewModel.state == .idle {
             updater.checkForUpdates()

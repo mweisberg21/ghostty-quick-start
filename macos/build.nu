@@ -7,9 +7,17 @@ def main [
     --scheme: string = "Ghostty"       # Xcode scheme (Ghostty, DockTilePlugin)
     --configuration: string = "Debug"  # Build configuration (Debug, Release, ReleaseLocal)
     --action: string = "build"         # xcodebuild action (build, test, clean, etc.)
+    --native                          # Build only for this Mac
+    --only-testing: string = ""        # Optional test target or suite
 ] {
     let project = ($env.FILE_PWD | path join "Ghostty.xcodeproj")
     let build_dir = ($env.FILE_PWD | path join "build")
+    let native_args = if $native {
+        [-destination $"platform=macOS,arch=(^uname -m | str trim)" "ONLY_ACTIVE_ARCH=YES"]
+    } else {
+        []
+    }
+    let test_args = if $only_testing != "" { [-only-testing $only_testing] } else { [] }
 
     # Skip UI tests for CLI-based invocations because it requires
     # special permissions.
@@ -27,6 +35,8 @@ def main [
         -scheme $scheme
         -configuration $configuration
         $"SYMROOT=($build_dir)"
+        ...$native_args
+        ...$test_args
         ...$skip_testing
         $action)
 }

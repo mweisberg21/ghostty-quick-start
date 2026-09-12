@@ -209,6 +209,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     // MARK: Terminal Creation
 
     /// Returns all the available terminal controllers present in the app currently.
+    var quickStartFolder: URL?
+
     static var all: [TerminalController] {
         return NSApplication.shared.windows.compactMap {
             $0.windowController as? TerminalController
@@ -1109,14 +1111,16 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 
         // Initialize our content view to the SwiftUI root
         let container = TerminalViewContainer {
-            TerminalView(ghostty: ghostty, viewModel: self, delegate: self)
+            TerminalView(ghostty: ghostty, showsQuickStart: true, viewModel: self, delegate: self)
         }
 
         // Set the initial content size on the container so that
         // intrinsicContentSize returns the correct value immediately,
         // without waiting for @FocusedValue to propagate through the
         // SwiftUI focus chain.
-        container.initialContentSize = focusedSurface?.initialSize
+        if let size = focusedSurface?.initialSize {
+            container.initialContentSize = NSSize(width: size.width + 225, height: size.height)
+        }
 
         window.contentView = container
 
@@ -1165,6 +1169,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         // apply this based on the root config but change it later based on surface
         // config (see focused surface change callback).
         syncAppearance(.init(config))
+        QuickStartSessions.shared.register(self)
     }
 
     /// Setup correct window frame before showing the window
@@ -1225,6 +1230,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     }
 
     override func windowWillClose(_ notification: Notification) {
+        QuickStartSessions.shared.unregister(self)
         super.windowWillClose(notification)
         cancelPendingInitialPresentation()
         self.relabelTabs()
@@ -1261,6 +1267,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
 
     override func windowDidBecomeKey(_ notification: Notification) {
         super.windowDidBecomeKey(notification)
+        QuickStartSessions.shared.register(self)
+        QuickStartSessions.shared.refresh()
         self.relabelTabs()
         self.fixTabBar()
     }
